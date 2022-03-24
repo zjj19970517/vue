@@ -1523,14 +1523,15 @@
     child,
     vm
   ) {
-    {
-      checkComponents(child);
-    }
+
+    // 组件校验
+    checkComponents(child);
 
     if (typeof child === 'function') {
       child = child.options;
     }
 
+    // props,inject,directives的校验和规范化
     normalizeProps(child, vm);
     normalizeInject(child, vm);
     normalizeDirectives(child);
@@ -1550,6 +1551,7 @@
       }
     }
 
+    // 最终导出的结果选项
     var options = {};
     var key;
     for (key in parent) {
@@ -1560,7 +1562,12 @@
         mergeField(key);
       }
     }
+
+    // 混合字段
     function mergeField (key) {
+      // 合并策略
+      // 如果该字段有特殊的合并策略，便使用，反之使用默认的合并策略
+      // 默认的合并策略是 child 覆盖 parent
       var strat = strats[key] || defaultStrat;
       options[key] = strat(parent[key], child[key], vm, key);
     }
@@ -4971,64 +4978,86 @@
 
   var uid$3 = 0;
 
+  /**
+   * 实例的初始化
+   * @param {*} Vue Vue 构造函数
+   */
   function initMixin (Vue) {
     Vue.prototype._init = function (options) {
+      // vm 就是 this 实例对象
       var vm = this;
-      // a uid
-      vm._uid = uid$3++;
 
-      var startTag, endTag;
-      /* istanbul ignore if */
-      if (config.performance && mark) {
-        startTag = "vue-perf-start:" + (vm._uid);
-        endTag = "vue-perf-end:" + (vm._uid);
-        mark(startTag);
-      }
+      // Vue 实例上的唯一ID
+      vm._uid = uid$3++;
 
       // a flag to avoid this being observed
       vm._isVue = true;
-      // merge options
+
+      // 选项合并和处理
+      // merge option
       if (options && options._isComponent) {
-        // optimize internal component instantiation
-        // since dynamic options merging is pretty slow, and none of the
-        // internal component options needs special treatment.
+        // 子组件初始化时候走这里，做了一些性能优化
+        // 将组件配置对象上的一些深层次属性放置在 vm.$options 中，以提高代码执行效率
         initInternalComponent(vm, options);
       } else {
+        // 根组件走这里，完成选项合并，合并默认的选项和自定义选项
+        // vm.constructor 为 Vue 构造函数
+        // vm.constructor 上存在一些全局配置和属性，比如 vm.constructor.options 中有 全局components、全局指令、全局 filters
+        // vm.constructor 上还存在一些其他全局 API，比如 component、directive、extend、filter、mixin、use、observable、set等
+        // vm.constructor.prototype 构造函数的原型链上还存在很多方法，比如 $mount、$emit、$on、$watch 等
+        console.log('vm.constructor', vm.constructor.directive);
         vm.$options = mergeOptions(
+          // 解析出 Vue 构造函数上的 options
           resolveConstructorOptions(vm.constructor),
           options || {},
           vm
         );
       }
-      /* istanbul ignore else */
+
+      // 设置代理
       {
         initProxy(vm);
       }
       // expose real self
       vm._self = vm;
+
+      // 生命周期
       initLifecycle(vm);
+
+      // 事件中心
       initEvents(vm);
+
+      // render 函数
       initRender(vm);
+
       callHook(vm, 'beforeCreate');
-      initInjections(vm); // resolve injections before data/props
+
+      // resolve injections before data/props
+      initInjections(vm);
+
+      // 数据响应式处理
       initState(vm);
-      initProvide(vm); // resolve provide after data/props
+
+      // resolve provide after data/props
+      initProvide(vm);
+
       callHook(vm, 'created');
 
-      /* istanbul ignore if */
-      if (config.performance && mark) {
-        vm._name = formatComponentName(vm, false);
-        mark(endTag);
-        measure(("vue " + (vm._name) + " init"), startTag, endTag);
-      }
-
+      // 挂载 DOM
       if (vm.$options.el) {
         vm.$mount(vm.$options.el);
       }
     };
   }
 
+  /**
+   * 性能优化，
+   * 将组件配置对象上的一些深层次属性放置在 vm.$options 中，以提高代码执行效率
+   * @param {*} vm 组件实例
+   * @param {*} options 配置项
+   */
   function initInternalComponent (vm, options) {
+    // 基于构造函数上的配置对象创建 vm.$options
     var opts = vm.$options = Object.create(vm.constructor.options);
     // doing this because it's faster than dynamic enumeration.
     var parentVnode = options._parentVnode;
@@ -5047,22 +5076,41 @@
     }
   }
 
+  /**
+   * 解析 Vue 构造函数上的 options，并返回
+   * @param {*} Ctor
+   * @returns
+   */
   function resolveConstructorOptions (Ctor) {
+    // 实例构造函数上的选项
     var options = Ctor.options;
+
     if (Ctor.super) {
+      // 有基类
+      // 获取基类上的配置选项
       var superOptions = resolveConstructorOptions(Ctor.super);
+
+      // 缓存
       var cachedSuperOptions = Ctor.superOptions;
+
+      // 缓存无效了
       if (superOptions !== cachedSuperOptions) {
+
         // super option changed,
         // need to resolve new options.
         Ctor.superOptions = superOptions;
-        // check if there are any late-modified/attached options (#4976)
+
+        // 获取更改后的选型
         var modifiedOptions = resolveModifiedOptions(Ctor);
-        // update base extend options
+
         if (modifiedOptions) {
+          // 合并至 实例构造函数上的选项 的 extendOptions 属性中
           extend(Ctor.extendOptions, modifiedOptions);
         }
+
+        // 再做一层覆盖合并
         options = Ctor.options = mergeOptions(superOptions, Ctor.extendOptions);
+
         if (options.name) {
           options.components[options.name] = Ctor;
         }
@@ -5084,18 +5132,42 @@
     return modified
   }
 
+  // Vue 构造函数
   function Vue (options) {
-    if (!(this instanceof Vue)
-    ) {
-      warn('Vue is a constructor and should be called with the `new` keyword');
-    }
+    // 这个方法就是 Vue.prototype._init 方法
     this._init(options);
   }
 
+  // FIXME: 以下的几个方法，定义了 Vue 原型上的诸多方法和属性
+
+  // 定义 原型上的_init方法
+  // Vue.prototype._init
   initMixin(Vue);
+
+  // 定义 原型上跟数据相关的属性和方法
+  // Vue.prototype.$data
+  // Vue.prototype.$props
+  // Vue.prototype.$set
+  // Vue.prototype.$delete
+  // Vue.prototype.$watch
   stateMixin(Vue);
+
+  // 定义 原型上跟事件相关的属性和方法
+  // Vue.prototype.$on
+  // Vue.prototype.$once
+  // Vue.prototype.$off
+  // Vue.prototype.$emit
   eventsMixin(Vue);
+
+  // 定义 原型上跟生命周期相关的方法
+  // Vue.prototype._update
+  // Vue.prototype.$forceUpdate
+  // Vue.prototype.$destroy
   lifecycleMixin(Vue);
+
+  // 定义渲染相关的方法
+  // Vue.prototype.$nextTick
+  // Vue.prototype._render
   renderMixin(Vue);
 
   /*  */
@@ -5422,19 +5494,15 @@
   function initGlobalAPI (Vue) {
     // config
     var configDef = {};
+
+    // Vue 默认的配置
     configDef.get = function () { return config; };
-    {
-      configDef.set = function () {
-        warn(
-          'Do not replace the Vue.config object, set individual fields instead.'
-        );
-      };
-    }
+
+    // Vue.config 指向默认全局配置
     Object.defineProperty(Vue, 'config', configDef);
 
-    // exposed util methods.
-    // NOTE: these are not considered part of the public API - avoid relying on
-    // them unless you are aware of the risk.
+    // 暴露出一些 utils 方法
+    // 不推荐使用它们
     Vue.util = {
       warn: warn,
       extend: extend,
@@ -5442,11 +5510,14 @@
       defineReactive: defineReactive$$1
     };
 
+    // Vue.set = Vue.prototype.$set
     Vue.set = set;
+    // Vue.delete = Vue.prototype.$delete
     Vue.delete = del;
+    // Vue.nextTick = Vue.prototype.$nextTick
     Vue.nextTick = nextTick;
 
-    // 2.6 explicit observable API
+    // 响应式 API
     Vue.observable = function (obj) {
       observe(obj);
       return obj
@@ -5469,12 +5540,16 @@
     initAssetRegisters(Vue);
   }
 
+  // 初始化全局API
+  // 也就是 Vue 构造函数的静态属性和方法
   initGlobalAPI(Vue);
 
+  // 当前 Vue 实例是否运行于服务器。
   Object.defineProperty(Vue.prototype, '$isServer', {
     get: isServerRendering
   });
 
+  // SSR 上下文
   Object.defineProperty(Vue.prototype, '$ssrContext', {
     get: function get () {
       /* istanbul ignore next */
@@ -11927,6 +12002,7 @@
   });
 
   var mount = Vue.prototype.$mount;
+
   Vue.prototype.$mount = function (
     el,
     hydrating

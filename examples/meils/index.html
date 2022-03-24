@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Vue.js grid component example</title>
+    <script src="../../dist/vue.js"></script>
+    </head>
+  <body>
+    <div id="app">
+      {{ msg }}
+
+      <test />
+    </div>
+
+    <script>
+      Vue.component('test', new Vue({
+        name: 'test',
+        template: '<div>test component</div>'
+      }))
+
+      new Vue({
+        el: '#app',
+        data: {
+          msg: 'hello'
+        }
+      })
+    </script>
+
+  </body>
+</html>

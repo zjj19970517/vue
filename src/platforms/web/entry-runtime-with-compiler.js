@@ -14,26 +14,29 @@ const idToTemplate = cached(id => {
   return el && el.innerHTML
 })
 
+// 缓存了原型上的 $mount 方法
 const mount = Vue.prototype.$mount
+
+
+// 重新定义 $mount
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
 ): Component {
+
+  // 获取 el 元素
   el = el && query(el)
 
-  /* istanbul ignore if */
-  if (el === document.body || el === document.documentElement) {
-    process.env.NODE_ENV !== 'production' && warn(
-      `Do not mount Vue to <html> or <body> - mount to normal elements instead.`
-    )
-    return this
-  }
+  // 首先挂载节点 不能是 html、body
 
   const options = this.$options
+
+  // 如果不存在 render 函数，处理 template、el
   // resolve template/el and convert to render function
   if (!options.render) {
     let template = options.template
     if (template) {
+      // 存在 template
       if (typeof template === 'string') {
         if (template.charAt(0) === '#') {
           template = idToTemplate(template)
@@ -54,14 +57,14 @@ Vue.prototype.$mount = function (
         return this
       }
     } else if (el) {
+      // 存在 el，不存在 template
+      // 使用 el 作为 template 使用
       template = getOuterHTML(el)
     }
-    if (template) {
-      /* istanbul ignore if */
-      if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
-        mark('compile')
-      }
 
+    if (template) {
+      // 引入编译器中的方法
+      // 将 template 编译成 render 函数
       const { render, staticRenderFns } = compileToFunctions(template, {
         outputSourceRange: process.env.NODE_ENV !== 'production',
         shouldDecodeNewlines,
@@ -71,14 +74,10 @@ Vue.prototype.$mount = function (
       }, this)
       options.render = render
       options.staticRenderFns = staticRenderFns
-
-      /* istanbul ignore if */
-      if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
-        mark('compile end')
-        measure(`vue ${this._name} compile`, 'compile', 'compile end')
-      }
     }
   }
+
+  // 调用 mount 方法挂载当前实例
   return mount.call(this, el, hydrating)
 }
 

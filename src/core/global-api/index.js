@@ -21,19 +21,16 @@ import {
 export function initGlobalAPI (Vue: GlobalAPI) {
   // config
   const configDef = {}
+
+  // Vue 默认的配置
   configDef.get = () => config
-  if (process.env.NODE_ENV !== 'production') {
-    configDef.set = () => {
-      warn(
-        'Do not replace the Vue.config object, set individual fields instead.'
-      )
-    }
-  }
+
+  // Vue.config 指向默认全局配置
   Object.defineProperty(Vue, 'config', configDef)
 
-  // exposed util methods.
-  // NOTE: these are not considered part of the public API - avoid relying on
-  // them unless you are aware of the risk.
+  // 暴露出一些 utils 方法
+  // 不推荐使用它们
+  // Vue.util.defineReactive(this.array, 1, DEFAULT_VALUE) 可以让数组某个值变为响应式的
   Vue.util = {
     warn,
     extend,
@@ -41,29 +38,37 @@ export function initGlobalAPI (Vue: GlobalAPI) {
     defineReactive
   }
 
+  // Vue.set = Vue.prototype.$set
   Vue.set = set
+  // Vue.delete = Vue.prototype.$delete
   Vue.delete = del
+  // Vue.nextTick = Vue.prototype.$nextTick
   Vue.nextTick = nextTick
 
-  // 2.6 explicit observable API
+  // 响应式 API
   Vue.observable = <T>(obj: T): T => {
     observe(obj)
     return obj
   }
 
+  // 初始化 'components', 'directives', 'filters'
   Vue.options = Object.create(null)
   ASSET_TYPES.forEach(type => {
     Vue.options[type + 's'] = Object.create(null)
   })
 
-  // this is used to identify the "base" constructor to extend all plain-object
-  // components with in Weex's multi-instance scenarios.
+  // _base 表示基类
   Vue.options._base = Vue
 
+  // components 添加 keep-alive
   extend(Vue.options.components, builtInComponents)
 
+  // Vue.use
   initUse(Vue)
+  // Vue.mixin
   initMixin(Vue)
+  // Vue.extend
   initExtend(Vue)
+  // Vue.components, Vue.directive, Vue.filter
   initAssetRegisters(Vue)
 }
