@@ -23,11 +23,13 @@ export function initMixin (Vue: Class<Component>) {
     vm._uid = uid++
 
     // a flag to avoid this being observed
+    // _isVue标记是为了不让vue的响应式系统观测它
     vm._isVue = true
 
     // 选项合并和处理
     // merge option
     if (options && options._isComponent) {
+      // Vue 内部处理组件实例化的
       // 子组件初始化时候走这里，做了一些性能优化
       // 将组件配置对象上的一些深层次属性放置在 vm.$options 中，以提高代码执行效率
       initInternalComponent(vm, options)

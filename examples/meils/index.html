@@ -8,21 +8,30 @@
   <body>
     <div id="app">
       {{ msg }}
-
-      <test />
+      <!-- <test /> -->
     </div>
 
     <script>
       Vue.component('test', new Vue({
         name: 'test',
-        template: '<div>test component</div>'
-      }))
+        template: '<div>test component</div>',
+        created() {
+
+        }
+      }));
+
+      const parent = {
+        data: {
+          childMsg: ''
+        }
+      }
 
       new Vue({
         el: '#app',
         data: {
           msg: 'hello'
-        }
+        },
+        extends: parent
       })
     </script>
 

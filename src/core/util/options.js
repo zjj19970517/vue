@@ -422,8 +422,11 @@ function assertObjectType (name: string, value: any, vm: ?Component) {
 }
 
 /**
- * Merge two option objects into a new one.
- * Core utility used in both instantiation and inheritance.
+ * 选项合并
+ * @param {*} parent 基类的选项
+ * @param {*} child 当前的选项
+ * @param {*} vm
+ * @returns
  */
 export function mergeOptions (
   parent: Object,
@@ -431,23 +434,29 @@ export function mergeOptions (
   vm?: Component
 ): Object {
 
-  // 组件校验
+  // 组件校验，主要完成组件名的校验（不能以数字开头，不能更component、slot重名）
   checkComponents(child)
 
-  if (typeof child === 'function') {
-    child = child.options
-  }
-
+  // Vue 提供了多种配置方式供开发者使用，内部想要统一处理就必须要做规范化
   // props,inject,directives 的校验和规范化
   normalizeProps(child, vm)
   normalizeInject(child, vm)
   normalizeDirectives(child)
 
+  // 下面才是选型合并的真正开始：
+
+  // 这段代码主要是用来处理 extends 和 mixin 的，递归调用自身(mergeOptions方法)。
+  // eg：
+  // var app = new Vue({
+  //   el: '#app',
+  //   data(){
+  //     return {
+  //       name: 'hello'
+  //     }
+  //   }
+  // })
+  // 上面例中，child._base = Vue, 所以这段逻辑是不会进来的
   // 子组件上应用 mixin、extends
-  // Apply extends and mixins on the child options,
-  // but only if it is a raw options object that isn't
-  // the result of another mergeOptions call.
-  // Only merged options has the _base property.
   if (!child._base) {
     // 根组件才有 _base
     // 合并 extends
@@ -472,7 +481,7 @@ export function mergeOptions (
   }
 
   for (key in child) {
-    // 再处理 child 上的 key
+    // 再处理 child 上的 key，并且该 key 不在 parent 上
     if (!hasOwn(parent, key)) {
       mergeField(key)
     }
