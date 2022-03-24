@@ -113,6 +113,7 @@ strats.data = function (
   vm?: Component
 ): ?Function {
   if (!vm) {
+    // 子组件
     if (childVal && typeof childVal !== 'function') {
       process.env.NODE_ENV !== 'production' && warn(
         'The "data" option should be a function ' +
@@ -120,7 +121,6 @@ strats.data = function (
         'definitions.',
         vm
       )
-
       return parentVal
     }
     return mergeDataOrFn.call(this, parentVal, childVal)
