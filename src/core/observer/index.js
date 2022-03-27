@@ -152,6 +152,11 @@ export function defineReactive (
     enumerable: true,
     configurable: true,
     get: function reactiveGetter () {
+      if (key === 'foo') {
+        debugger
+        // inject 的值在 render 中使用的时候，会触发 getter，也会完成依赖收集
+        console.log('---', Dep.target)
+      }
       const value = getter ? getter.call(obj) : val
       if (Dep.target) {
         dep.depend()
@@ -165,6 +170,10 @@ export function defineReactive (
       return value
     },
     set: function reactiveSetter (newVal) {
+      if (key === 'foo') {
+        debugger
+        console.log('---', Dep.target)
+      }
       const value = getter ? getter.call(obj) : val
       /* eslint-disable no-self-compare */
       if (newVal === value || (newVal !== newVal && value !== value)) {

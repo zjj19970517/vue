@@ -1,38 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Vue.js grid component example</title>
     <script src="../../dist/vue.js"></script>
-    </head>
+  </head>
   <body>
     <div id="app">
-      {{ msg }}
-      <!-- <test /> -->
+      msg：{{ msg }}
+      <button @click="handleUpdateMsg">更新 msg</button>
+      <test />
     </div>
 
     <script>
-      // Vue.component('test', new Vue({
-      //   name: 'test',
-      //   template: '<div>test component</div>',
-      //   created() {}
-      // }));
+      // 子组件
+      Vue.component('test', {
+        name: 'test',
+        inject: ['foo'],
+        template: '<div>test component {{ this.foo }}</div>',
+        data () {
+          console.log('test component init data', this.foo)
+    return {
+            name: 'name'
+          }
+  },
+        mounted () {
+          setTimeout(() => {
+            this.foo = '更新了 inject '
+    }, 2000)
+  }
+      })
 
-      const parent = {
-        data: {
-          childMsg: ''
-        }
-      }
-
-      new Vue({
+const vm = new Vue({
         el: '#app',
+        provide () {
+          console.log('parent component init provide', this.msg)
+    return {
+            foo: this.msg
+          }
+  },
         data: {
           msg: 'hello'
         },
-        extends: parent
+        methods: {
+          handleUpdateMsg () {
+            this.msg = '更新后的值'
+            this.foo = this.msg
+    }
+        }
       })
-
+console.log('vm', vm)
     </script>
-
   </body>
 </html>

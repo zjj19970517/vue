@@ -1,0 +1,61 @@
+# 创建库
+create database Student character set utf8;
+
+# 创建学生表
+CREATE TABLE `student` (
+  `sno` char(5) NOT NULL COMMENT '学号',
+  `sname` char(8) NOT NULL COMMENT '姓名',
+  `ssex` int(2) NOT NULL DEFAULT 1 COMMENT '性别',
+  `sage` smallint(4) NOT NULL COMMENT '年龄',
+  PRIMARY KEY (`sno`)
+);
+
+# 创建课程表
+CREATE TABLE `course` (
+  `courseid` int(11) NOT NULL AUTO_INCREMENT COMMENT '课程ID',
+  `cname` varchar(16) NOT NULL COMMENT '课程名',
+  PRIMARY KEY (`sno`)
+);
+
+# 成绩表
+CREATE TABLE `sc` (
+  `grade` int(11) NOT NULL COMMENT '成绩',
+  `sid` char(5) NOT NULL COMMENT '学生id',
+  `cid` int(11) NOT NULL COMMENT '课程id',
+);
+
+# 建立外键关联
+ALTER TABLE sc ADD FOREIGN KEY sc_sid (sid) REFERENCES student (sno);
+ALTER TABLE sc ADD FOREIGN KEY sc_cid (cid) REFERENCES course (courseid);
+
+#
+
+INSERT INTO student
+    (sno, sname, ssex, sage)
+    VALUES
+    ("95001", "洛燕妮", 0, 20);
+
+INSERT INTO student
+    (sno, sname, ssex, sage)
+    VALUES
+    ("95002", "欧阳炎", 1, 19);
+
+
+INSERT INTO course
+    (courseid, cname)
+    VALUES
+    (1, "JAVA");
+INSERT INTO course
+    (courseid, cname)
+    VALUES
+    (2, "C");
+
+
+
+INSERT INTO sc
+    (sid, cid, grade)
+    VALUES
+    ('95001',1,98);
+
+
+ALTER TABLE student ADD time INT(4);
