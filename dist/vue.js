@@ -1093,11 +1093,6 @@ function defineReactive (
     enumerable: true,
     configurable: true,
     get: function reactiveGetter () {
-      if (key === 'foo') {
-        debugger
-        // inject 的值在 render 中使用的时候，会触发 getter，也会完成依赖收集
-        console.log('---', Dep.target);
-      }
       var value = getter ? getter.call(obj) : val;
       if (Dep.target) {
         dep.depend();
@@ -1111,10 +1106,6 @@ function defineReactive (
       return value
     },
     set: function reactiveSetter (newVal) {
-      if (key === 'foo') {
-        debugger
-        console.log('---', Dep.target);
-      }
       var value = getter ? getter.call(obj) : val;
       /* eslint-disable no-self-compare */
       if (newVal === value || (newVal !== newVal && value !== value)) {
@@ -4353,6 +4344,7 @@ var uid$1 = 0;
 
 function initMixin (Vue) {
   Vue.prototype._init = function (options) {
+    console.log('初始化', options);
     var vm = this;
     // a uid
     vm._uid = uid$1++;
@@ -9339,13 +9331,21 @@ var directives$1 = {
 
 var baseOptions = {
   expectHTML: true,
+  // 处理 class、style、v-model
   modules: modules$1,
+  // 处理指令
   directives: directives$1,
+  // 是否为 pre 标签
   isPreTag: isPreTag,
+  // 是否为自闭合标签
   isUnaryTag: isUnaryTag,
+  // 规定了一些应该使用 props 进行绑定的属性
   mustUseProp: mustUseProp,
+  // 可以只写开始标签的标签，结束标签浏览器会自动补全
   canBeLeftOpenTag: canBeLeftOpenTag,
+  // 是否是保留标签（html + svg）
   isReservedTag: isReservedTag,
+  // 获取标签的命名空间
   getTagNamespace: getTagNamespace,
   staticKeys: genStaticKeys(modules$1)
 };
@@ -10093,90 +10093,6 @@ var unaryOperatorsRE = new RegExp('\\b' + (
 ).split(',').join('\\s*\\([^\\)]*\\)|\\b') + '\\s*\\([^\\)]*\\)');
 
 // check valid identifier for v-for
-var identRE = /[A-Za-z_$][\w$]*/;
-
-// strip strings in expressions
-var stripStringRE = /'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*\$\{|\}(?:[^`\\]|\\.)*`|`(?:[^`\\]|\\.)*`/g;
-
-// detect problematic expressions in a template
-function detectErrors (ast) {
-  var errors = [];
-  if (ast) {
-    checkNode(ast, errors);
-  }
-  return errors
-}
-
-function checkNode (node, errors) {
-  if (node.type === 1) {
-    for (var name in node.attrsMap) {
-      if (dirRE.test(name)) {
-        var value = node.attrsMap[name];
-        if (value) {
-          if (name === 'v-for') {
-            checkFor(node, ("v-for=\"" + value + "\""), errors);
-          } else if (onRE.test(name)) {
-            checkEvent(value, (name + "=\"" + value + "\""), errors);
-          } else {
-            checkExpression(value, (name + "=\"" + value + "\""), errors);
-          }
-        }
-      }
-    }
-    if (node.children) {
-      for (var i = 0; i < node.children.length; i++) {
-        checkNode(node.children[i], errors);
-      }
-    }
-  } else if (node.type === 2) {
-    checkExpression(node.expression, node.text, errors);
-  }
-}
-
-function checkEvent (exp, text, errors) {
-  var stipped = exp.replace(stripStringRE, '');
-  var keywordMatch = stipped.match(unaryOperatorsRE);
-  if (keywordMatch && stipped.charAt(keywordMatch.index - 1) !== '$') {
-    errors.push(
-      "avoid using JavaScript unary operator as property name: " +
-      "\"" + (keywordMatch[0]) + "\" in expression " + (text.trim())
-    );
-  }
-  checkExpression(exp, text, errors);
-}
-
-function checkFor (node, text, errors) {
-  checkExpression(node.for || '', text, errors);
-  checkIdentifier(node.alias, 'v-for alias', text, errors);
-  checkIdentifier(node.iterator1, 'v-for iterator', text, errors);
-  checkIdentifier(node.iterator2, 'v-for iterator', text, errors);
-}
-
-function checkIdentifier (ident, type, text, errors) {
-  if (typeof ident === 'string' && !identRE.test(ident)) {
-    errors.push(("invalid " + type + " \"" + ident + "\" in expression: " + (text.trim())));
-  }
-}
-
-function checkExpression (exp, text, errors) {
-  try {
-    new Function(("return " + exp));
-  } catch (e) {
-    var keywordMatch = exp.replace(stripStringRE, '').match(prohibitedKeywordRE);
-    if (keywordMatch) {
-      errors.push(
-        "avoid using JavaScript keyword as property name: " +
-        "\"" + (keywordMatch[0]) + "\"\n  Raw expression: " + (text.trim())
-      );
-    } else {
-      errors.push(
-        "invalid expression: " + (e.message) + " in\n\n" +
-        "    " + exp + "\n\n" +
-        "  Raw expression: " + (text.trim()) + "\n"
-      );
-    }
-  }
-}
 
 /*  */
 
@@ -10190,36 +10106,29 @@ function createFunction (code, errors) {
 }
 
 function createCompileToFunctionFn (compile) {
+  // 编译缓存
   var cache = Object.create(null);
 
+  // 这里是我们在 $mount 中调用的实际地方
   return function compileToFunctions (
-    template,
-    options,
-    vm
+    template, // 模版内容
+    options, // 编译选项
+    vm // 实例
   ) {
     options = extend({}, options);
-    var warn$$1 = options.warn || warn;
     delete options.warn;
 
     /* istanbul ignore if */
     {
-      // detect possible CSP restriction
+      // 检测可能的 CSP 限制
       try {
         new Function('return 1');
       } catch (e) {
-        if (e.toString().match(/unsafe-eval|CSP/)) {
-          warn$$1(
-            'It seems you are using the standalone build of Vue.js in an ' +
-            'environment with Content Security Policy that prohibits unsafe-eval. ' +
-            'The template compiler cannot work in this environment. Consider ' +
-            'relaxing the policy to allow unsafe-eval or pre-compiling your ' +
-            'templates into render functions.'
-          );
-        }
+        // CSP 限制，建议使用 render 函数
       }
     }
 
-    // check cache
+    // 如果有缓存，则跳过编译，直接从缓存中获取上次编译的结果
     var key = options.delimiters
       ? String(options.delimiters) + template
       : template;
@@ -10227,50 +10136,24 @@ function createCompileToFunctionFn (compile) {
       return cache[key]
     }
 
-    // compile
+    // 开始编译模版
     var compiled = compile(template, options);
 
-    // check compilation errors/tips
-    {
-      if (compiled.errors && compiled.errors.length) {
-        warn$$1(
-          "Error compiling template:\n\n" + template + "\n\n" +
-          compiled.errors.map(function (e) { return ("- " + e); }).join('\n') + '\n',
-          vm
-        );
-      }
-      if (compiled.tips && compiled.tips.length) {
-        compiled.tips.forEach(function (msg) { return tip(msg, vm); });
-      }
-    }
+    // 检查编译期间产生的 error 和 tip，分别输出到控制台
 
-    // turn code into functions
+    // 转换编译得到的字符串代码为函数，通过 new Function(code) 实现（createFunction的效果就是new Function）
+
+    console.log('compiled.render', compiled.render);
+    // with(this){return _c('div',[_c('p',[_v("Hello hello hello")]),_v(" "),_c('input',{directives:[{name:"focus",rawName:"v-focus"}]}),_v(" "),_c('p',[_v(_s(msg))])])}
     var res = {};
     var fnGenErrors = [];
+    console.log('生成后的', createFunction(compiled.render, fnGenErrors));
     res.render = createFunction(compiled.render, fnGenErrors);
     res.staticRenderFns = compiled.staticRenderFns.map(function (code) {
       return createFunction(code, fnGenErrors)
     });
 
-    // check function generation errors.
-    // this should only happen if there is a bug in the compiler itself.
-    // mostly for codegen development use
-    /* istanbul ignore if */
-    {
-      if ((!compiled.errors || !compiled.errors.length) && fnGenErrors.length) {
-        warn$$1(
-          "Failed to generate render function:\n\n" +
-          fnGenErrors.map(function (ref) {
-            var err = ref.err;
-            var code = ref.code;
-
-            return ((err.toString()) + " in\n\n" + code + "\n");
-        }).join('\n'),
-          vm
-        );
-      }
-    }
-
+    // 缓存
     return (cache[key] = res)
   }
 }
@@ -10279,17 +10162,26 @@ function createCompileToFunctionFn (compile) {
 
 function createCompilerCreator (baseCompile) {
   return function createCompiler (baseOptions) {
+    // 真正的编译函数
     function compile (
-      template,
-      options
+      template, // 待编译模版
+      options // 编译配置选项
     ) {
+      debugger
+      // 拷贝一份
       var finalOptions = Object.create(baseOptions);
+      // 收集错误
       var errors = [];
+      // 存储提示
       var tips = [];
+      // 定义警告函数
       finalOptions.warn = function (msg, tip) {
         (tip ? tips : errors).push(msg);
       };
 
+      // debugger
+
+      // 配置扩展
       if (options) {
         // merge custom modules
         if (options.modules) {
@@ -10311,13 +10203,11 @@ function createCompilerCreator (baseCompile) {
         }
       }
 
+      // 执行真正的编译逻辑
       var compiled = baseCompile(template, finalOptions);
-      {
-        errors.push.apply(errors, detectErrors(compiled.ast));
-      }
-      compiled.errors = errors;
-      compiled.tips = tips;
-      return compiled
+      compiled.errors = errors; // 编译中的错误
+      compiled.tips = tips; // 编译后的信息
+      return compiled // 返回编译结果
     }
 
     return {
@@ -10329,19 +10219,30 @@ function createCompilerCreator (baseCompile) {
 
 /*  */
 
-var createCompiler = createCompilerCreator(function baseCompile (
+var createCompiler = createCompilerCreator(
+// 初始化编译执行函数
+function baseCompile (
   template,
   options
 ) {
+  // 解析模版内容为 AST 抽象语法树
   var ast = parse(template.trim(), options);
+  console.log('解析的AST', ast);
+  // 优化
   optimize(ast, options);
+  // 生成最终的代码
   var code = generate(ast, options);
+
   return {
     ast: ast,
     render: code.render,
     staticRenderFns: code.staticRenderFns
   }
 });
+
+// 这部分代码是在Vue引入阶段定义的，createCompilerCreator在传递了一个baseCompile函数作为参数后，返回了一个编译器的生成器，
+// 也就是createCompiler,有了这个生成器，当将编译配置选项baseOptions传入后,这个编译器生成器便生成了一个指定环境指定配置下的编译器，
+// 而其中编译执行函数就是返回对象的compileToFunctions。
 
 /*  */
 
@@ -10402,14 +10303,15 @@ Vue$3.prototype.$mount = function (
       if ("development" !== 'production' && config.performance && mark) {
         mark('compile');
       }
-
+      // 编译出 render 函数
       var ref = compileToFunctions(template, {
         shouldDecodeNewlines: shouldDecodeNewlines,
-        delimiters: options.delimiters,
-        comments: options.comments
+        delimiters: options.delimiters, // 模版中插入数据的分割符号，默认为 ["{{", "}}"]
+        comments: options.comments // 是否保留模版中过的注释，默认为 false
       }, this);
       var render = ref.render;
       var staticRenderFns = ref.staticRenderFns;
+      console.log('render', render, staticRenderFns);
       options.render = render;
       options.staticRenderFns = staticRenderFns;
 

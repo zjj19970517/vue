@@ -1,55 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Vue.js grid component example</title>
-    <script src="../../dist/vue.js"></script>
-  </head>
-  <body>
-    <div id="app">
-      msg：{{ msg }}
-      <button @click="handleUpdateMsg">更新 msg</button>
-      <test />
+
+<head>
+  <meta charset="utf-8" />
+  <title>Vue.js grid component example</title>
+  <script src="../../dist/vue.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div id="hello-world-template">
+      <div>
+        <p>Hello hello hello</p>
+        <input v-focus>
+        <p>{{ msg }}</p>
+      </div>
     </div>
+  </div>
 
-    <script>
-      // 子组件
-      Vue.component('test', {
-        name: 'test',
-        inject: ['foo'],
-        template: '<div>test component {{ this.foo }}</div>',
-        data () {
-          console.log('test component init data', this.foo)
-    return {
-            name: 'name'
-          }
-  },
-        mounted () {
-          setTimeout(() => {
-            this.foo = '更新了 inject '
-    }, 2000)
-  }
+  <script>
+    Vue.directive('focus', {
+      // 当被绑定的元素插入到 DOM 中时……
+      inserted: function (el) {
+        // 聚焦元素
+        el.focus()
+      }
+    })
+
+    const MyPlugin = {}
+    MyPlugin.install = function (_Vue, options) {
+      _Vue.component('test', {
+        template: '<div>test</div>'
       })
-
-const vm = new Vue({
-        el: '#app',
-        provide () {
-          console.log('parent component init provide', this.msg)
-    return {
-            foo: this.msg
-          }
-  },
-        data: {
-          msg: 'hello'
-        },
-        methods: {
-          handleUpdateMsg () {
-            this.msg = '更新后的值'
-            this.foo = this.msg
     }
-        }
-      })
-console.log('vm', vm)
-    </script>
-  </body>
+
+    Vue.use(MyPlugin)
+
+    var vm = new Vue({
+      data: {
+        msg: 'xxxx'
+      },
+      template: '#hello-world-template'
+    })
+
+    vm.$mount('#app')
+
+  </script>
+</body>
+
 </html>

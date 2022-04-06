@@ -61,12 +61,13 @@ Vue.prototype.$mount = function (
       if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
         mark('compile')
       }
-
+      // 编译出 render 函数
       const { render, staticRenderFns } = compileToFunctions(template, {
         shouldDecodeNewlines,
-        delimiters: options.delimiters,
-        comments: options.comments
+        delimiters: options.delimiters, // 模版中插入数据的分割符号，默认为 ["{{", "}}"]
+        comments: options.comments // 是否保留模版中过的注释，默认为 false
       }, this)
+      console.log('render', render, staticRenderFns)
       options.render = render
       options.staticRenderFns = staticRenderFns
 
