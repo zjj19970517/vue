@@ -13,34 +13,25 @@
       <div>
         <p>Hello hello hello</p>
         <input v-focus>
-        <p>{{ msg }}</p>
+        <p id="test">{{ msg }}</p>
       </div>
     </div>
   </div>
 
   <script>
-    Vue.directive('focus', {
-      // 当被绑定的元素插入到 DOM 中时……
-      inserted: function (el) {
-        // 聚焦元素
-        el.focus()
-      }
-    })
-
-    const MyPlugin = {}
-    MyPlugin.install = function (_Vue, options) {
-      _Vue.component('test', {
-        template: '<div>test</div>'
-      })
-    }
-
-    Vue.use(MyPlugin)
 
     var vm = new Vue({
       data: {
         msg: 'xxxx'
       },
-      template: '#hello-world-template'
+      template: '#hello-world-template',
+      mounted () {
+        this.msg = 'xxxxxxx'
+        this.$nextTick(() => {
+          const test = document.getElementById('test')
+          console.log('xxxxxxx', test.innerText)
+        })
+      }
     })
 
     vm.$mount('#app')

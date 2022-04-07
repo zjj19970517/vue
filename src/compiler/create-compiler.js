@@ -11,7 +11,6 @@ export function createCompilerCreator (baseCompile: Function): Function {
       template: string, // 待编译模版
       options?: CompilerOptions // 编译配置选项
     ): CompiledResult {
-      debugger
       // 拷贝一份
       const finalOptions = Object.create(baseOptions)
       // 收集错误

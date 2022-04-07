@@ -10167,7 +10167,6 @@ function createCompilerCreator (baseCompile) {
       template, // 待编译模版
       options // 编译配置选项
     ) {
-      debugger
       // 拷贝一份
       var finalOptions = Object.create(baseOptions);
       // 收集错误
